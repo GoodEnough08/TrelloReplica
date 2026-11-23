@@ -191,3 +191,69 @@ def calculate_board_metrics(board_data):
         "columns_summary": [{"title": col.get("title"), "count": len(tasks_by_column.get(col.get("id"), []))} for col in columns]
     }
 
+def generate_rule_based_summary(metrics, board_data):
+    """
+    Generates a structured, highly articulate executive summary using actual metrics.
+    Completely deterministic, zero hallucinations, fast, and reliable.
+    """
+    board_title = metrics["board_info"].get("title", "Project Board")
+    total = metrics["total_tasks"]
+    completed = metrics["completed_count"]
+    in_progress = metrics["in_progress_count"]
+    pending = metrics["pending_count"]
+    progress = metrics["progress_percentage"]
+    overdue = metrics["overdue_count"]
+    high_prio = metrics["high_priority_count"]
+
+    if total == 0:
+        status_label = "Initialized"
+        executive_summary = (
+            f"**{board_title}** is currently set up and awaiting initial task entries. "
+            "To jumpstart the workflow, define core milestones in the Backlog and populate initial action items with clear priorities and due dates."
+        )
+    elif progress == 100:
+        status_label = "Complete"
+        executive_summary = (
+            f"Outstanding progress! All **{total} task(s)** on **{board_title}** have been completed. "
+            "The board is in a finalized state. Review outcomes or archive completed tasks before commencing the next project phase."
+        )
+    elif overdue > 0:
+        status_label = "Attention Required"
+        executive_summary = (
+            f"**{board_title}** has achieved **{progress}% completion** ({completed}/{total} tasks resolved). "
+            f"However, immediate attention is required as **{overdue} task(s)** are overdue and **{high_prio} high-priority task(s)** are still pending. "
+            f"Currently, {in_progress} task(s) are actively in progress."
+        )
+    elif in_progress > 0:
+        status_label = "In Active Development"
+        executive_summary = (
+            f"**{board_title}** is progressing steadily at **{progress}% completion** with {completed} out of {total} tasks completed. "
+            f"There are {in_progress} item(s) actively underway and {pending} total pending tasks. "
+            f"Workflow health is stable with no immediate blockers."
+        )
+    else:
+        status_label = "Planning & Queued"
+        executive_summary = (
+            f"**{board_title}** has {total} task(s) queued across columns with {progress}% completed so far. "
+            "Team capacity should be focused on moving prioritized items from Backlog into active development."
+        )
+
+    return {
+        "status_label": status_label,
+        "executive_summary": executive_summary,
+        "progress_percentage": progress,
+        "total_tasks": total,
+        "completed_tasks": completed,
+        "pending_tasks": pending,
+        "in_progress_tasks": in_progress,
+        "high_priority_pending_tasks": [t["title"] for t in metrics["high_priority_tasks"]],
+        "high_priority_count": high_prio,
+        "overdue_tasks": [f"{t['title']} (Due: {t.get('dueDate', 'N/A')})" for t in metrics["overdue_tasks"]],
+        "overdue_count": overdue,
+        "bottlenecks": [b["message"] for b in metrics["bottlenecks"]],
+        "suggested_next_actions": metrics["suggested_actions"],
+        "columns_summary": metrics["columns_summary"],
+        "provider": "fallback_rule_based",
+        "fallback_reason": "Generated using TaskFlow's intelligent statistical engine. (To activate Gemini LLM analysis, set GEMINI_API_KEY in backend/.env)"
+    }
+

@@ -257,3 +257,109 @@ def generate_rule_based_summary(metrics, board_data):
         "fallback_reason": "Generated using TaskFlow's intelligent statistical engine. (To activate Gemini LLM analysis, set GEMINI_API_KEY in backend/.env)"
     }
 
+def generate_gemini_summary(metrics, board_data, api_key):
+    """
+    Calls Google Gemini API using requests library to provide an insightful AI narrative
+    strictly grounded in the board's factual metrics.
+    """
+    board_title = metrics["board_info"].get("title", "Project Board")
+    board_desc = metrics["board_info"].get("description", "")
+
+    prompt = f"""You are TaskFlow AI, an expert project management advisor.
+Analyze the following real-time board data for project: "{board_title}".
+Description: "{board_desc}"
+
+Board Statistics (FACTUAL & VERIFIED):
+- Total Tasks: {metrics["total_tasks"]}
+- Completed Tasks: {metrics["completed_count"]} ({metrics["progress_percentage"]}%)
+- In-Progress Tasks: {metrics["in_progress_count"]}
+- Pending Tasks: {metrics["pending_count"]}
+- High Priority Pending: {metrics["high_priority_count"]} ({[t['title'] for t in metrics["high_priority_tasks"]]})
+- Overdue Tasks: {metrics["overdue_count"]} ({[t['title'] for t in metrics["overdue_tasks"]]})
+- Columns breakdown: {json.dumps(metrics["columns_summary"])}
+
+RULES:
+1. Ground your response STRICTLY on the actual numbers and tasks above. Never hallucinate tasks or names not listed.
+2. Return ONLY a valid JSON object matching the requested schema with no surrounding markdown or code blocks.
+
+SCHEMA:
+{{
+  "status_label": "Short status (e.g. On Track / Attention Required / Near Completion / Planning)",
+  "executive_summary": "2-3 concise paragraphs evaluating project health, momentum, and risk factors.",
+  "bottlenecks": ["Specific bottleneck 1 grounded in data", "Specific bottleneck 2 grounded in data"],
+  "suggested_next_actions": ["Actionable step 1 for team", "Actionable step 2 for team", "Actionable step 3 for team"]
+}}"""
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "responseMimeType": "application/json"
+        }
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=12)
+        if response.status_code == 200:
+            res_data = response.json()
+            candidates = res_data.get("candidates", [])
+            if candidates:
+                content = candidates[0].get("content", {})
+                parts = content.get("parts", [])
+                if parts:
+                    raw_text = parts[0].get("text", "").strip()
+                    # Parse JSON from response
+                    if raw_text.startswith("```"):
+                        raw_text = raw_text.split("```")[1]
+                        if raw_text.startswith("json"):
+                            raw_text = raw_text[4:]
+                        raw_text = raw_text.strip()
+                    parsed = json.loads(raw_text)
+
+                    return {
+                        "status_label": parsed.get("status_label", "Active"),
+                        "executive_summary": parsed.get("executive_summary", ""),
+                        "progress_percentage": metrics["progress_percentage"],
+                        "total_tasks": metrics["total_tasks"],
+                        "completed_tasks": metrics["completed_count"],
+                        "pending_tasks": metrics["pending_count"],
+                        "in_progress_tasks": metrics["in_progress_count"],
+                        "high_priority_pending_tasks": [t["title"] for t in metrics["high_priority_tasks"]],
+                        "high_priority_count": metrics["high_priority_count"],
+                        "overdue_tasks": [f"{t['title']} (Due: {t.get('dueDate', 'N/A')})" for t in metrics["overdue_tasks"]],
+                        "overdue_count": metrics["overdue_count"],
+                        "bottlenecks": parsed.get("bottlenecks") or [b["message"] for b in metrics["bottlenecks"]],
+                        "suggested_next_actions": parsed.get("suggested_next_actions") or metrics["suggested_actions"],
+                        "columns_summary": metrics["columns_summary"],
+                        "provider": "gemini",
+                        "fallback_reason": None
+                    }
+        # If API returned non-200 or unexpected payload, fall back safely
+        fallback = generate_rule_based_summary(metrics, board_data)
+        fallback["fallback_reason"] = f"Gemini API returned status code {response.status_code}. Seamlessly switched to intelligent rule engine."
+        return fallback
+    except Exception as exc:
+        fallback = generate_rule_based_summary(metrics, board_data)
+        fallback["fallback_reason"] = f"Gemini API connection error ({str(exc)}). Seamlessly switched to intelligent rule engine."
+        return fallback
+
+def generate_board_summary(board_data):
+    """
+    Main entry point for generating board summary.
+    Checks environment for GEMINI_API_KEY.
+    """
+    metrics = calculate_board_metrics(board_data)
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if api_key and api_key.strip() and api_key.strip() != "your_gemini_api_key_here":
+        return generate_gemini_summary(metrics, board_data, api_key.strip())
+    else:
+        return generate_rule_based_summary(metrics, board_data)
+

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: taskflow-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: FLASK_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://your-taskflow-app.vercel.app
+      - key: GEMINI_API_KEY
+        sync: false
+

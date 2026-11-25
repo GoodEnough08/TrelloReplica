@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { useBoardData } from './hooks/useBoardData';
 import { Sidebar } from './components/Sidebar';
@@ -58,6 +58,24 @@ export function App() {
 
   // Toast notifications state
   const [toasts, setToasts] = useState([]);
+
+  // Global keyboard shortcuts: Escape closes active modals, Ctrl/Cmd+K focuses search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsTaskModalOpen(false);
+        setIsBoardModalOpen(false);
+        setIsAISummaryOpen(false);
+        setIsSettingsOpen(false);
+        setIsSidebarOpen(false);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.getElementById('taskflow-search-input')?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now() + Math.random();

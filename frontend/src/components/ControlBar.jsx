@@ -31,8 +31,9 @@ export function ControlBar({
             style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
+            id="taskflow-search-input"
             type="text"
-            placeholder="Search tasks by title..."
+            placeholder="Search tasks by title... (Ctrl+K)"
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
             className="form-input"

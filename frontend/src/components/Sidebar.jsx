@@ -17,6 +17,7 @@ export function Sidebar({
   onClose,
   workspaces,
   boards,
+  allTasks = [],
   activeBoardId,
   onSelectBoard,
   onOpenCreateBoard,
@@ -217,6 +218,9 @@ export function Sidebar({
                   />
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {b.title}
+                  </span>
+                  <span className="badge-count">
+                    {allTasks.filter(t => t.boardId === b.id).length}
                   </span>
                 </button>
               );

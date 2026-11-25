@@ -34,6 +34,7 @@ export function App() {
     moveTaskToColumn,
     handleDragEnd,
     resetDemoData,
+    rawState,
   } = useBoardData();
 
   // Mobile sidebar state
@@ -251,6 +252,7 @@ export function App() {
         onClose={() => setIsSidebarOpen(false)}
         workspaces={workspaces}
         boards={boards}
+        allTasks={rawState.tasks}
         activeBoardId={activeBoardId}
         onSelectBoard={(id) => {
           setActiveBoardId(id);

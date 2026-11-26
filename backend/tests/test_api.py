@@ -195,3 +195,42 @@ def test_ai_board_summary_gemini_mock_failure_fallback(client, sample_board_data
             assert "Gemini API connection error" in data["fallback_reason"]
             assert data["total_tasks"] == 5
 
+def test_method_not_allowed_returns_json(client):
+    """Test 405 Method Not Allowed returns structured JSON error."""
+    resp = client.get("/api/ai/board-summary")
+    assert resp.status_code == 405
+    data = resp.get_json()
+    assert data["error"] == "Method Not Allowed"
+
+def test_bottleneck_detection_for_review_and_wip(client):
+    """Test rule-based engine flags Review queue and high WIP bottlenecks."""
+    board_payload = {
+        "board": {"id": "b-wip", "title": "High WIP Sprint"},
+        "columns": [
+            {"id": "c-prog", "title": "In Progress"},
+            {"id": "c-rev", "title": "Staging Review"},
+            {"id": "c-done", "title": "Done"}
+        ],
+        "tasks": [
+            {"id": "t1", "title": "Task 1", "columnId": "c-prog", "priority": "Medium"},
+            {"id": "t2", "title": "Task 2", "columnId": "c-prog", "priority": "Medium"},
+            {"id": "t3", "title": "Task 3", "columnId": "c-prog", "priority": "Medium"},
+            {"id": "t4", "title": "Task 4", "columnId": "c-rev", "priority": "High"},
+            {"id": "t5", "title": "Task 5", "columnId": "c-rev", "priority": "Medium"},
+            {"id": "t6", "title": "Task 6", "columnId": "c-rev", "priority": "Low"}
+        ]
+    }
+    with patch.dict("os.environ", {}, clear=True):
+        resp = client.post(
+            "/api/ai/board-summary",
+            data=json.dumps(board_payload),
+            content_type="application/json"
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["in_progress_tasks"] == 6
+        bottleneck_text = " ".join(data["bottlenecks"])
+        assert "Review" in bottleneck_text
+        assert "Work-In-Progress" in bottleneck_text
+
+

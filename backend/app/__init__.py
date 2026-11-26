@@ -27,6 +27,14 @@ def create_app(test_config=None):
     def not_found(error):
         return jsonify({"error": "Not Found", "message": "The requested resource was not found"}), 404
 
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return jsonify({"error": "Method Not Allowed", "message": "The HTTP method is not allowed for this endpoint"}), 405
+
+    @app.errorhandler(415)
+    def unsupported_media_type(error):
+        return jsonify({"error": "Unsupported Media Type", "message": "Request Content-Type must be application/json"}), 415
+
     @app.errorhandler(500)
     def internal_server_error(error):
         return jsonify({"error": "Internal Server Error", "message": "An unexpected error occurred"}), 500

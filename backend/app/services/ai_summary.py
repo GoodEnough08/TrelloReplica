@@ -4,12 +4,13 @@ import json
 import requests
 
 def _parse_due_date(due_date_str):
-    if not due_date_str:
+    if not due_date_str or not isinstance(due_date_str, str):
         return None
-    for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%fZ", "%Y/%m/%d"):
+    cleaned = due_date_str.strip().split("T")[0]
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"):
         try:
-            return datetime.strptime(due_date_str.split("T")[0], "%Y-%m-%d").date()
-        except Exception:
+            return datetime.strptime(cleaned, fmt).date()
+        except ValueError:
             continue
     return None
 
@@ -42,7 +43,7 @@ def calculate_board_metrics(board_data):
         title_lower = col.get("title", "").strip().lower()
         if any(w in title_lower for w in ["done", "completed", "closed", "finished"]):
             done_column_ids.add(cid)
-        elif any(w in title_lower for w in ["review", "qa", "testing", "verification"]):
+        elif any(w in title_lower for w in ["review", "qa", "testing", "verification", "staging"]):
             review_column_ids.add(cid)
         elif any(w in title_lower for w in ["progress", "doing", "active", "in-progress", "development"]):
             in_progress_column_ids.add(cid)

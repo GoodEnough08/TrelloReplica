@@ -1,29 +1,55 @@
-# Dependencies
+# Dependencies & Virtual Environments
 node_modules/
+venv/
+.venv/
+env/
 backend/venv/
 __pycache__/
 *.py[cod]
 *$py.class
-.pytest_cache/
+*.egg-info/
+.eggs/
 
-# Build outputs
+# Testing & Coverage
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+.vitest/
+
+# Build Outputs
+dist/
+dist-ssr/
+build/
 frontend/dist/
 frontend/dist-ssr/
 *.local
+vite.config.js.timestamp-*
 
-# Environment variables
+# Environment Variables (keep .env.example tracked)
 .env
+.env.*
+!.env.example
 backend/.env
 frontend/.env
+
+# Media & Demo Recordings
+*.mp4
+*.webm
+*.mov
 
 # IDE & OS
 .vscode/
 .idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs & Caches
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
+pnpm-debug.log*
+.eslintcache

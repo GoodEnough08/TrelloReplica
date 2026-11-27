@@ -151,5 +151,47 @@ describe('TaskFlow Board Management & Persistence Suite', () => {
     expect(result.current.activeTasks.some(t => t.title === 'Temporary Task to be Reset')).toBe(false);
     expect(result.current.boards.length).toBe(INITIAL_BOARDS.length);
   });
+
+  it('creates, updates, and deletes boards cleanly', () => {
+    const { result } = renderHook(() => useBoardData());
+    const initialBoardCount = result.current.boards.length;
+
+    let createdBoard;
+    act(() => {
+      createdBoard = result.current.createBoard({
+        title: 'Release Engineering Q1',
+        description: 'Infrastructure and CI/CD board',
+        themeColor: '#10B981',
+      });
+    });
+
+    expect(createdBoard).toBeDefined();
+    expect(result.current.boards.length).toBe(initialBoardCount + 1);
+    expect(result.current.activeBoardId).toBe(createdBoard.id);
+
+    act(() => {
+      result.current.updateBoard(createdBoard.id, { title: 'Release Engineering Q1 Updated' });
+    });
+    expect(result.current.activeBoard.title).toBe('Release Engineering Q1 Updated');
+
+    act(() => {
+      result.current.deleteBoard(createdBoard.id);
+    });
+    expect(result.current.boards.length).toBe(initialBoardCount);
+    expect(result.current.boards.some(b => b.id === createdBoard.id)).toBe(false);
+  });
+
+  it('reorders columns left and right using moveColumn', () => {
+    const { result } = renderHook(() => useBoardData());
+    const firstColId = result.current.activeColumns[0].id;
+    const secondColId = result.current.activeColumns[1].id;
+
+    act(() => {
+      result.current.moveColumn(firstColId, 'right');
+    });
+
+    expect(result.current.activeColumns[0].id).toBe(secondColId);
+    expect(result.current.activeColumns[1].id).toBe(firstColId);
+  });
 });
 

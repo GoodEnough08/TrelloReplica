@@ -244,6 +244,8 @@ PYTHONPATH=. pytest tests/ -v
 - `test_ai_board_summary_invalid_payload`: Confirms HTTP 400 validation for non-JSON or schema-violating inputs.
 - `test_ai_board_summary_gemini_mock_success`: Mocks Gemini API returning structured JSON.
 - `test_ai_board_summary_gemini_mock_failure_fallback`: Validates seamless fallback when Gemini API encounters a network timeout.
+- `test_method_not_allowed_returns_json`: Verifies HTTP 405 returns structured JSON error responses.
+- `test_bottleneck_detection_for_review_and_wip`: Validates Review queue and high WIP bottleneck detection.
 
 ### Run Frontend Tests (Vitest)
 ```bash
@@ -258,6 +260,12 @@ npm test
 - `handles drag-and-drop reordering with handleDragEnd`: Tests in-column reordering.
 - `creates, renames, and deletes custom columns`: Tests full column lifecycle.
 - `resets demo data to initial defaults upon command`: Tests instant state restoration.
+- `creates, updates, and deletes boards cleanly`: Tests full board lifecycle and active board switching.
+- `reorders columns left and right using moveColumn`: Tests column position reordering.
+
+### Keyboard Shortcuts
+- `Ctrl + K` (or `Cmd + K` on macOS): Focus the task search bar immediately.
+- `Escape`: Close any open modal or mobile navigation drawer.
 
 ### Run Full Test Suite in One Command
 ```bash
